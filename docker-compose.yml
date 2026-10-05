@@ -1,15 +1,31 @@
+# Produktion (Coolify "Docker Compose"-Ressource). Lokal: .env aus .env.example erzeugen.
 services:
   app:
     build: .
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    # Kein Host-Port: Coolify (Traefik) routet per Domain auf Container-Port 3000.
+    # Lokal testen: docker-compose.override.yml mit `ports: ["3000:3000"]` oder `docker compose run -p`.
+    expose:
+      - "3000"
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-tetra}:${POSTGRES_PASSWORD:-tetra}@postgres:5432/${POSTGRES_DB:-tetra}
+      DATABASE_URL: postgres://${POSTGRES_USER:-tetra}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-tetra}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?set BETTER_AUTH_URL}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY}
       ENCRYPTION_KEY_PREVIOUS: ${ENCRYPTION_KEY_PREVIOUS:-}
+      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-}
+      ALLOW_SIGNUP: ${ALLOW_SIGNUP:-false}
+      MIGRATIONS_DIR: /app/drizzle
+      MEDIA_BUFFER_DIR: /data/media
+      NODE_ENV: production
+    volumes:
+      - mediabuffer:/data/media
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     depends_on:
       postgres:
         condition: service_healthy
@@ -19,7 +35,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-tetra}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tetra}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-tetra}
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -31,3 +47,4 @@ services:
 
 volumes:
   pgdata:
+  mediabuffer:
