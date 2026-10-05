@@ -42,6 +42,8 @@ Im Coolify-Tab "Environment Variables" setzen (Vorlage: `.env.example`). Pflicht
 | `ENCRYPTION_KEY_PREVIOUS` | nein | Nur während einer Key-Rotation |
 | `TRUSTED_ORIGINS` | nein | Zusätzliche Origins, kommagetrennt |
 | `ALLOW_SIGNUP` | nein | Standard `false`; siehe Abschnitt 5 |
+| `ALLOWED_IPS` | empfohlen | Erlaubte Client-IPs/CIDR, kommagetrennt, z. B. `178.105.17.179`; leer = IP-Sperre aus (siehe Abschnitt 9) |
+| `TRUSTED_PROXY_HOPS` | nein | Vertrauenswürdige Proxys vor der App, Standard `1` (Traefik) |
 
 Fest im Compose gesetzt (nicht ändern): `MIGRATIONS_DIR=/app/drizzle`, `MEDIA_BUFFER_DIR=/data/media`, `NODE_ENV=production`.
 
@@ -103,6 +105,44 @@ Die Registrierung ist nur erlaubt, solange **kein** Nutzer existiert (oder `ALLO
 | `/api/health?deep=1` liefert 503 | DB nicht erreichbar/Passwort geändert (Passwort im Volume bleibt das alte!) |
 | Zertifikat fehlt | DNS zeigt nicht auf den Server oder Port 80/443 blockiert |
 
-## 9. Ungeprüft
+## 9. IP-Sperre
+
+Das Panel (UI und API) ist nur von der VPN-IP `178.105.17.179` erreichbar. Öffentlich bleiben ausschließlich `/legal/**`, `/api/health` und die statischen Assets (`/_nuxt/**`, `favicon.ico`, `robots.txt`). Login-Seite, `/api/auth/**`, Webhooks und OAuth-Callbacks sind **gesperrt** (fremde IPs erhalten ein schlichtes `403 Forbidden`). Zwei Ebenen (Defense in Depth):
+
+**Assets-Entscheidung:** `/_nuxt/**` enthält nur gehashte, öffentlich ausgelieferte Client-Bundles ohne Secrets (Secrets liegen nur serverseitig/in der DB). Die Rechtsseiten brauchen dieselben Entry-Chunks, eine Trennung ist technisch nicht möglich. Daher sind Assets öffentlich; sie verraten nur die Struktur der UI, keine Daten.
+
+### Ebene 1: Traefik (Coolify)
+
+Im Dienst `app` unter "Custom Labels" ergänzen (Router-Namen `tetra` anpassen, Domain `panel.example.com`; Entrypoint/Cert-Resolver wie von Coolify generiert übernehmen, hier nur die Ergänzungen). Der `ipallowlist`-Filter hängt am Haupt-Router, ein zweiter Router mit höherer Priorität nimmt `/legal` und `/api/health` aus:
+
+```
+traefik.http.middlewares.tetra-vpn.ipallowlist.sourcerange=178.105.17.179/32
+# Haupt-Router (Name aus den von Coolify erzeugten Labels, hier tetra-https): nur VPN-IP
+traefik.http.routers.tetra-https.middlewares=tetra-vpn@docker
+# Zweiter Router, hoehere Prioritaet, ohne IP-Filter
+traefik.http.routers.tetra-public.rule=Host(`panel.example.com`) && (PathPrefix(`/legal`) || PathPrefix(`/_nuxt`) || Path(`/api/health`) || Path(`/favicon.ico`) || Path(`/robots.txt`))
+traefik.http.routers.tetra-public.priority=100
+traefik.http.routers.tetra-public.entrypoints=https
+traefik.http.routers.tetra-public.tls=true
+traefik.http.routers.tetra-public.tls.certresolver=letsencrypt
+traefik.http.routers.tetra-public.service=<service-name-des-haupt-routers>
+```
+
+Hinweise: Coolify überschreibt die Labels der Compose-Ressource teils beim Deploy; Namen von Router/Service/Resolver aus den generierten Labels ablesen (nicht getestet). Traefik wertet `sourcerange` gegen die direkte Peer-IP aus. Sitzt ein weiterer Proxy/CDN davor (z. B. Cloudflare), stattdessen `ipallowlist.ipstrategy.depth` setzen und `TRUSTED_PROXY_HOPS` entsprechend erhöhen.
+
+### Ebene 2: App-Middleware
+
+`server/middleware/00-ip-allowlist.ts` läuft vor der Security-Middleware und prüft `ALLOWED_IPS` (IPv4/IPv6, optional CIDR, kommagetrennt). Client-IP: Bei `TRUSTED_PROXY_HOPS=N` (Standard 1) wird der N-te Eintrag **von rechts** aus `X-Forwarded-For` genommen; vom Client mitgeschickte linke Einträge werden ignoriert. `0` = Header ignorieren, Socket-IP verwenden. Fail-closed: ist `ALLOWED_IPS` gesetzt und die Client-IP nicht ermittelbar (Kette zu kurz, ungültig), gibt es 403; ungültige Einträge in `ALLOWED_IPS` werden ignoriert (Warnung im Log), sind alle ungültig, wird alles gesperrt. Ist `ALLOWED_IPS` leer, ist die Sperre aus (in Produktion Warnung im Log `[ip-allowlist] WARNUNG ...`). Wichtig: Der Container darf keinen Host-Port veröffentlichen, sonst könnte ein Angreifer `X-Forwarded-For` direkt setzen (Compose nutzt nur `expose`).
+
+### Abhängigkeiten und Betrieb
+
+- **OAuth** (Google/YouTube, TikTok, OneDrive): Der Callback `/api/oauth/*/callback` wird vom Browser des Nutzers aufgerufen, also über die VPN-IP, und ist deshalb erlaubt. Die Anbieter selbst rufen die App nicht auf.
+- **HeyGen** arbeitet per Polling (ausgehende Requests der App), keine eingehenden Webhooks nötig. `/api/webhooks/**` ist daher ebenfalls gesperrt.
+- **Prüfer/Audits** (z. B. Sicherheits- oder Lighthouse-Prüfung von außen): brauchen temporär eine freigegebene IP, d. h. in `ALLOWED_IPS` und im Traefik-`sourcerange` ergänzen und danach wieder entfernen.
+- **Externes Monitoring** nutzt `/api/health` (öffentlich).
+- **Selbst-Aussperrung/Notfall:** VPN-IP ändert sich oder fällt aus -> in Coolify `ALLOWED_IPS` (und das Traefik-Label) anpassen und neu deployen; Zugriff auf Server per SSH/Coolify-Oberfläche bleibt davon unberührt. Zur kompletten Deaktivierung der App-Ebene `ALLOWED_IPS` leeren (Traefik-Ebene separat entfernen).
+- Prüfen: `curl -si https://panel.example.com/login` von fremder IP -> `403 Forbidden`; `curl -s https://panel.example.com/api/health` -> `{"status":"ok"}`.
+
+## 10. Ungeprüft
 
 Nicht getestet (kein Server, Docker-Daemon war beim Erstellen nicht gestartet): `docker build`, Compose-Start, Coolify-Menüpunkte, Backup-Konfiguration. Beim ersten echten Deploy abhaken und Abweichungen hier korrigieren.

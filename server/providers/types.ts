@@ -27,6 +27,8 @@ export interface TopicRequest {
   niche: string
   count: number
   language?: string
+  /** Stil-/Tonalitätshinweis des Projekts. */
+  style?: string
   /** Bereits vorhandene Themen (Ausschlussliste). */
   exclude?: string[]
 }

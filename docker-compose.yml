@@ -15,6 +15,9 @@ services:
       ENCRYPTION_KEY_PREVIOUS: ${ENCRYPTION_KEY_PREVIOUS:-}
       TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-}
       ALLOW_SIGNUP: ${ALLOW_SIGNUP:-false}
+      # IP-Sperre: leer = aus. Beispiel (VPN-IP) in .env.example.
+      ALLOWED_IPS: ${ALLOWED_IPS:-}
+      TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
       MIGRATIONS_DIR: /app/drizzle
       MEDIA_BUFFER_DIR: /data/media
       NODE_ENV: production

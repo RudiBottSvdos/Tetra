@@ -27,11 +27,11 @@ export interface ProviderBuilders {
 
 /** Secret-Schlüssel je Provider. */
 export const CREDENTIAL_KEYS = {
-  'idea': 'deepseek_api_key',
-  'script': 'deepseek_api_key',
-  'video': 'heygen_api_key',
-  'publisher:youtube': 'youtube_token',
-  'publisher:tiktok': 'tiktok_token'
+  'idea': 'deepseek.apiKey',
+  'script': 'deepseek.apiKey',
+  'video': 'heygen.apiKey',
+  'publisher:youtube': 'youtube.token',
+  'publisher:tiktok': 'tiktok.token'
 } as const satisfies Record<ProviderKey, string>
 
 export interface ProviderRegistry {

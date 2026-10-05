@@ -33,7 +33,7 @@ Aktueller Stand: nichts davon existiert. Verantwortlich ist der Nutzer; der Agen
 | Zugang / Antrag | Inhalt | Fällig vor | Hinweis |
 |---|---|---|---|
 | Domain + DNS + Coolify-Host | Eigene Domain, HTTPS (Let's Encrypt), A/CNAME auf Coolify | W3 (WP0.6) | Blockiert OAuth-Redirects und beide Audits; so früh wie möglich |
-| Google-Cloud-Projekt + YouTube Data API v3 | Projekt, API aktivieren, OAuth-Client (Web), Redirect-URI `https://<domain>/api/oauth/youtube/callback` | W4 (WP3.1) | Consent-Screen auf "In production" stellen (sonst Refresh-Tokens nach 7 Tagen ungültig); Google-App-Verifizierung (Scope `youtube.upload` ist sensibel) ist getrennt vom YouTube-API-Compliance-Audit |
+| Google-Cloud-Projekt + YouTube Data API v3 | Projekt, API aktivieren, OAuth-Client (Web), Redirect-URI `https://<domain>/api/oauth/google/callback` | W4 (WP3.1) | Consent-Screen auf "In production" stellen (sonst Refresh-Tokens nach 7 Tagen ungültig); Google-App-Verifizierung (Scope `youtube.upload` ist sensibel) ist getrennt vom YouTube-API-Compliance-Audit |
 | YouTube-Brand-Accounts/Kanäle | Je Projekt ein Brand-Account/Kanal | W5 (WP3.2 Live-Test) | Kanal-Verifizierung (Telefon) für längere Uploads/Features beachten |
 | YouTube-API-Compliance-Audit | Formular für Audit/Quota-Erweiterung | Antrag sofort nach WP0.6 + WP4.2 (Seiten online) | Bis zur Freigabe sind Uploads privat |
 | TikTok-Developer-Konto + App | App mit Content Posting API, Scopes `video.upload` (Inbox), später `video.publish`, Redirect-URI, Domain-/URL-Verifizierung, Link auf Rechtsseiten | W4 (WP3.1) | Inbox braucht kein Audit; Zielkonto als Tester eintragen |

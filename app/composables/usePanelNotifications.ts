@@ -10,35 +10,33 @@ export interface PanelNotification {
   actionTo?: string
 }
 
-const mockNotifications: PanelNotification[] = [
-  {
-    id: 'mock-1',
-    type: 'cost_alert',
-    title: 'Kostenalarm',
-    message: '80 % des Tagesbudgets sind verbraucht (Beispieldaten).',
-    createdAt: '2026-10-05T08:00:00.000Z',
-    actionLabel: 'Kosten ansehen',
-    actionTo: '/costs'
-  },
-  {
-    id: 'mock-2',
-    type: 'token_expired',
-    title: 'Token abgelaufen',
-    message: 'Der YouTube-Zugang muss erneuert werden (Beispieldaten).',
-    createdAt: '2026-10-05T07:30:00.000Z',
-    actionLabel: 'Einstellungen',
-    actionTo: '/settings'
-  }
-]
-
 /**
- * Liefert Benachrichtigungen fürs Panel. Aktuell Mock-Daten;
- * später durch GET /api/notifications ersetzen.
+ * Benachrichtigungen fürs Panel über GET /api/notifications und PATCH /api/notifications/:id.
+ * Fehler (offline, 401, 5xx) werden toleriert: das Banner bleibt dann einfach leer.
  */
 export function usePanelNotifications() {
-  const notifications = useState<PanelNotification[]>('panel-notifications', () => [...mockNotifications])
-  const dismiss = (id: string) => {
-    notifications.value = notifications.value.filter(n => n.id !== id)
+  const notifications = useState<PanelNotification[]>('panel-notifications', () => [])
+
+  const refresh = async () => {
+    try {
+      const res = await $fetch<{ notifications: PanelNotification[] }>('/api/notifications')
+      notifications.value = Array.isArray(res?.notifications) ? res.notifications : []
+    } catch {
+      // tolerant: bestehende Liste behalten
+    }
   }
-  return { notifications, dismiss }
+
+  const dismiss = async (id: string) => {
+    const previous = notifications.value
+    notifications.value = previous.filter(n => n.id !== id)
+    try {
+      await $fetch(`/api/notifications/${id}`, { method: 'PATCH' })
+    } catch {
+      // Dismiss lokal beibehalten; beim nächsten Refresh erscheint sie ggf. erneut
+    }
+  }
+
+  if (import.meta.client && !notifications.value.length) void refresh()
+
+  return { notifications, dismiss, refresh }
 }

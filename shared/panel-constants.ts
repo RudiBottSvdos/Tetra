@@ -28,6 +28,8 @@ export interface SecretKeyDef {
 export const SECRET_KEYS: readonly SecretKeyDef[] = [
   { key: 'heygen.apiKey', label: 'HeyGen API-Key', description: 'Avatar-Videos rendern.', projectOverride: true },
   { key: 'deepseek.apiKey', label: 'Deepseek API-Key', description: 'Themen und Skripte erzeugen.', projectOverride: true },
+  { key: 'google.clientId', label: 'Google OAuth Client-ID', description: 'OAuth-Client (Web) für die YouTube-Kanalverbindung.', projectOverride: false },
+  { key: 'google.clientSecret', label: 'Google OAuth Client-Secret', description: 'OAuth-Client (Web) für die YouTube-Kanalverbindung.', projectOverride: false },
   { key: 'onedrive.clientId', label: 'OneDrive Client-ID', description: 'Azure-App für die Archivierung (Platzhalter, Verbindung folgt).', projectOverride: false },
   { key: 'onedrive.clientSecret', label: 'OneDrive Client-Secret', description: 'Azure-App für die Archivierung (Platzhalter, Verbindung folgt).', projectOverride: false }
 ]

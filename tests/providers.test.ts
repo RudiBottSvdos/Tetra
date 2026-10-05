@@ -99,11 +99,11 @@ describe('Registry', () => {
       return 'key'
     }, builders)
     expect((await reg.video({ projectId: 'p1' })).name).toBe('fake-video')
-    expect(seen).toEqual([['heygen_api_key', 'p1']])
+    expect(seen).toEqual([['heygen.apiKey', 'p1']])
   })
 
   it('Fallback Projekt -> global im Resolver, fehlender Key ist permanent', async () => {
-    const store: Record<string, string> = { 'global:heygen_api_key': 'g' }
+    const store: Record<string, string> = { 'global:heygen.apiKey': 'g' }
     const resolve = async (k: string, s: { projectId?: string }) => (s.projectId && store[`${s.projectId}:${k}`]) || store[`global:${k}`] || null
     const reg = createProviderRegistry(resolve, builders)
     await expect(reg.video({ projectId: 'p1' })).resolves.toBeDefined()

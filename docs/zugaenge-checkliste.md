@@ -38,7 +38,7 @@ Stand: 2026-10-05. Diese Anleitung führt Sie durch alle notwendigen Konten, Zug
    - **Anwendungstyp:** Web application.
    - **Authorized redirect URIs hinzufügen:**
      ```
-     https://<domain>/api/oauth/youtube/callback
+     https://<domain>/api/oauth/google/callback
      ```
    - Client-ID und Client-Secret kopieren.
 
