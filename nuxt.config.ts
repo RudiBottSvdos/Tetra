@@ -8,6 +8,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     databaseUrl: '',
+    migrationsDir: '',
     betterAuthSecret: '',
     betterAuthUrl: 'http://localhost:3000'
   }

@@ -3,6 +3,7 @@ const mode = ref<'login' | 'register'>('login')
 const state = reactive({ name: '', email: '', password: '' })
 const error = ref('')
 const loading = ref(false)
+const { data: signup } = await useFetch<{ open: boolean }>('/api/auth/signup-status', { default: () => ({ open: false }) })
 
 async function submit() {
   error.value = ''
@@ -41,7 +42,7 @@ async function submit() {
         </UButton>
       </UForm>
       <template #footer>
-        <UButton variant="link" @click="mode = mode === 'login' ? 'register' : 'login'">
+        <UButton v-if="signup?.open || mode === 'register'" variant="link" @click="mode = mode === 'login' ? 'register' : 'login'">
           {{ mode === 'login' ? 'Noch kein Konto? Registrieren' : 'Schon ein Konto? Anmelden' }}
         </UButton>
       </template>

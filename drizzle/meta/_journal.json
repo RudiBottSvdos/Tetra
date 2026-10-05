@@ -8,6 +8,13 @@
       "when": 1791217311248,
       "tag": "0000_polite_captain_britain",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791219775488,
+      "tag": "0001_true_serpent_society",
+      "breakpoints": true
     }
   ]
 }

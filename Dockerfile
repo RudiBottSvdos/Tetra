@@ -8,7 +8,7 @@ RUN pnpm build
 
 FROM node:22-alpine AS runtime
 WORKDIR /app
-ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000 MIGRATIONS_DIR=/app/drizzle
 COPY --from=build /app/.output ./.output
 COPY --from=build /app/drizzle ./drizzle
 EXPOSE 3000
