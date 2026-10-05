@@ -9,11 +9,15 @@ services:
       - "5432:5432"
     volumes:
       - pgdata-dev:/var/lib/postgresql/data
+      # Legt beim ersten Start zusaetzlich die Test-DB `tetra_test` an
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/10-test-db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U tetra -d tetra"]
       interval: 5s
       timeout: 5s
       retries: 10
 
+# Tests: TEST_DATABASE_URL=postgres://tetra:tetra@localhost:5432/tetra_test pnpm test:db
+# Existiert das Volume schon: docker compose -f docker-compose.dev.yml exec postgres createdb -U tetra tetra_test
 volumes:
   pgdata-dev:
